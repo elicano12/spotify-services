@@ -1,25 +1,55 @@
-import logo from './logo.svg';
-import './App.css';
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable no-unused-vars */
+import React, { useState, useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import postAccessToken from "./api/postAccessToken";
+import SearchPage from "./pages/searchPage";
+import TrackDetailPage from "./pages/trackDetailPage";
+import LoginPage from "./pages/loginSpotify";
+import styles from "./index.css";
 
-function App() {
+const App = () => {
+
+  const clientId = process.env.REACT_APP_CLIENT_ID;
+  const clientSecret = process.env.REACT_APP_CLIENT_SECRET;
+  const redirectUri = process.env.REACT_APP_URI_SPOTIFY
+
+  const [accessToken, setAccessToken] = useState("");
+  const [code, setCode] = useState("");
+
+  const getAccessToken = async () => {
+    const token = await postAccessToken(clientId, clientSecret, redirectUri, code);
+    setAccessToken(token);
+  };
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get("code");
+    if (code) {
+      setCode(code);
+      getAccessToken();
+    }
+  }, []);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<LoginPage />} />
+        {accessToken && (
+          <Route
+            path="/search-track"
+            element={<SearchPage accessToken={accessToken} />}
+          />
+        )}
+        {accessToken && (
+          <Route
+            path="/track/:id"
+            element={<TrackDetailPage accessToken={accessToken} />}
+          />
+        )}
+      </Routes>
+    </Router>
   );
-}
+};
 
 export default App;
